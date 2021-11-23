@@ -14,7 +14,6 @@ final class GlobalStates {
     
     static let shared = GlobalStates()
     
-    
-    
+    //변경된 찜유저 정보
     var changedFavoriteUserInfo: PublishRelay<FavoriteUserInfo> = PublishRelay()
 }

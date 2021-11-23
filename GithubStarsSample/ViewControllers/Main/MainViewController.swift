@@ -100,7 +100,7 @@ final class MainViewController: UIViewController {
         
         scrollView.do {
             view.addSubview($0)
-//            $0.delegate = self
+            
             $0.showsHorizontalScrollIndicator = false
             $0.showsVerticalScrollIndicator = false
             $0.alwaysBounceVertical = false

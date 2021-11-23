@@ -46,6 +46,9 @@ final class SearchViewController: UIViewController, ReactorKit.View {
         //페이징
         tableView.rx.contentOffset
             .distinctUntilChanged()
+            .do(onNext: { [weak self] _ in
+                self?.view.endEditing(true)
+            })
             .filter { _ in return
                 self.tableView.isNearBottomEdge()
                 && reactor.currentState.isLoadingNextPage == false
@@ -62,6 +65,13 @@ final class SearchViewController: UIViewController, ReactorKit.View {
             .distinctUntilChanged()
             .bind { searchText in
                 reactor.action.onNext(.searchUserName(name: searchText))
+            }
+            .disposed(by: disposeBag)
+        
+        //키보드 검색버튼 클릭시 키보드 다운
+        searchBar.rx.searchButtonClicked
+            .bind { [weak self] _ in
+                self?.view.endEditing(true)
             }
             .disposed(by: disposeBag)
         

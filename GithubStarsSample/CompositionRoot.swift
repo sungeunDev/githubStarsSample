@@ -38,8 +38,7 @@ final class CompositionRoot {
             
             window.rootViewController = UINavigationController(rootViewController: mainController)
         } else {
-            //load local storage error page
-            print("----------- <\(#file), \(#function), \(#line)> -----------")
+            print("-------------------- <load local storage error page> --------------------")
         }
         
         return AppDependency(window: window)

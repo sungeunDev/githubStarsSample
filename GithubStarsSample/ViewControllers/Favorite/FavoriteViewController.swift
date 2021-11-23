@@ -50,26 +50,35 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
             .disposed(by: disposeBag)
         
         searchBar.rx.text.orEmpty
-            .filterEmpty()
             .debounce(RxTimeInterval.milliseconds(500), scheduler: MainScheduler.instance)
             .distinctUntilChanged()
             .bind { searchText in
-                print("----------- <\(#file), \(#function), \(#line)> -----------")
-                print(searchText)
-                reactor.action.onNext(.searchFavoriteUser(keyword: searchText))
+                if searchText.isEmpty {
+                    reactor.action.onNext(.loadFavoriteUsers)
+                } else {
+                    reactor.action.onNext(.searchFavoriteUser(keyword: searchText))
+                }
             }
             .disposed(by: disposeBag)
         
-        searchBar.rx.cancelButtonClicked
-            .bind { _ in
-                reactor.action.onNext(.resetSearchResult)
+        // 키보드 처리
+        tableView.rx.contentOffset
+            .distinctUntilChanged()
+            .bind(onNext: { [weak self] _ in
+                self?.view.endEditing(true)
+            })
+            .disposed(by: disposeBag)
+        
+        searchBar.rx.searchButtonClicked
+            .bind { [weak self] _ in
+                self?.view.endEditing(true)
             }
             .disposed(by: disposeBag)
         
+        //dataSource
         let productList = reactor.state
             .map { $0.favoriteUsers }
         
-        //dataSource
         let items: Observable<[FavoriteUserSectionModel]> =  productList
             .map { (items) -> [FavoriteUserSectionModel] in
                 
