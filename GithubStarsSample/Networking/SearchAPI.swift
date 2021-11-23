@@ -9,10 +9,11 @@ import Moya
 
 enum SearchAPI {
     // 사용자 이름 검색
-    case searchUserList(name: String, page: Int)
+    case searchUserList(name: String, page: Int, perPageCount: Int)
 }
 
 extension SearchAPI: TargetType {
+    
     var baseURL: URL {
         return URL(string: Constants.URLs.baseURL)!
     }
@@ -37,10 +38,11 @@ extension SearchAPI: TargetType {
     
     var task: Task {
         switch self {
-        case .searchUserList(let userName, let page):
+        case .searchUserList(let userName, let page, let perPageCount):
             let params: [String: Any] = [
                 "q": userName,
-                "page": page
+                "page": page,
+                "per_page": perPageCount
             ]
             return .requestParameters(parameters: params, encoding: URLEncoding.default)
         }

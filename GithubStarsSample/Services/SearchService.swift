@@ -10,7 +10,7 @@ import RxSwift
 
 
 protocol SearchServiceType {
-    func userList(name: String, page: Int) -> Observable<List<SearchItem>>
+    func userList(name: String, page: Int, perPageCount: Int) -> Observable<List<SearchItem>>
 }
 
 final class SearchService: SearchServiceType {
@@ -21,9 +21,10 @@ final class SearchService: SearchServiceType {
         self.networking = networking
     }
     
-    func userList(name: String, page: Int) -> Observable<List<SearchItem>> {
-        return self.networking.request(.searchUserList(name: name, page: page))
-//            .debug()
+    func userList(name: String, page: Int, perPageCount: Int) -> Observable<List<SearchItem>> {
+        return self.networking.request(.searchUserList(name: name,
+                                                       page: page,
+                                                       perPageCount: perPageCount))
             .asObservable()
             .map(List<SearchItem>.self)
     }

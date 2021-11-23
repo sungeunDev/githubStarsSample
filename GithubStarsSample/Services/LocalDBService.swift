@@ -5,6 +5,7 @@
 //  Created by Romie on 2021/11/20.
 //
 
+import RxCocoa
 import RxSwift
 import Realm
 import RealmSwift
@@ -22,8 +23,6 @@ protocol LocalStorageServiceType {
     
     @discardableResult func update(_ block: () -> ()) -> Bool
     @discardableResult func delete<T: Object>(_ object: T) -> Bool
-    
-    //@discardableResult > ?? 이게뭔지
 }
 
 typealias LocalStorage = Realm
@@ -130,6 +129,7 @@ class FavoriteUser: Object {
     @objc dynamic var htmlUrl: String?
     @objc dynamic var reposUrl: String?
     @objc dynamic var score: Int = 0
+    @objc dynamic var createdDateAt: Date = Date()
     
     override class func primaryKey() -> String? {
         return "id"
@@ -209,6 +209,10 @@ final class FavoriteService: FavoriteServiceType {
         let isSuccess = storage.write(addedFavoriteUser)
         print("addFavoriteUser isSuccess: \(isSuccess)")
         
+        if isSuccess == true {
+            GlobalStates.shared.changedFavoriteUserInfo.accept(FavoriteUserInfo(userId: item.id, status: .added))
+        }
+        
         return Observable.create { observer in
             if isSuccess {
                 observer.onNext(Void())
@@ -221,9 +225,14 @@ final class FavoriteService: FavoriteServiceType {
     }
     
     func removeFavoriteUser(user: FavoriteUser) -> Observable<Void> {
+        let id = user.id
         let isSuccess = storage.delete(user)
         print("removeFavoriteUser isSuccess: \(isSuccess)")
      
+        if isSuccess == true {
+            GlobalStates.shared.changedFavoriteUserInfo.accept(FavoriteUserInfo(userId: id, status: .removed))
+        }
+        
         return Observable.create { observer in
             if isSuccess {
                 observer.onNext(Void())
@@ -256,34 +265,4 @@ final class FavoriteService: FavoriteServiceType {
     }
 }
 
-
-// MARK: - 찜 관련 매니저
-final class FavoriteListManager: NSObject {
-    static let shared = FavoriteListManager()
-    
-    private var disposeBag = DisposeBag()
-    
-    private override init() { }
-    
-    func loadFavoriteList() {
-        
-    }
-    
-    func setFavorite(placeId: Int, category: Int) {
-        
-//        //현재 찜리스트에 있는지 여부
-//        let hasFavorite: Bool = favoritesDictionary.keys.contains(key)
-//
-//        //변경된 찜 정보 전달 (api 응답과 관계없이 앱 내부에서 처리)
-//        let isFavorite: Bool = !hasFavorite //찜상태 변경
-//        changedFavoriteInfoSubject.onNext(FavoriteInfo(item: myFavorite, isFavorite: isFavorite))
-        
-    }
-    
-    /// 찜 변경 사항이 있는 숙소 정보 (주로 찜버튼 UI 갱신시 이용)
-//    var changedFavoriteInfoSubject: PublishSubject<FavoriteInfo> = PublishSubject()
-    
-    //전체 찜 리스트
-//    var favoritesDictionary: [FavoriteKey: MyFavorite] = [:]
-}
 

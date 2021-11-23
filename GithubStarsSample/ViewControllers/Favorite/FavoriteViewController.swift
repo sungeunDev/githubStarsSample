@@ -37,10 +37,17 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
         super.viewDidLoad()
         
         makeUI()
+        reactor?.action.onNext(.loadFavoriteUsers)
     }
     
     // MARK: - Binding
     func bind(reactor: Reactor) {
+        
+        //찜 정보 변경될때 리액터에서 찜리스트 데이터 로드
+        GlobalStates.shared.changedFavoriteUserInfo
+            .map { _ in Reactor.Action.loadFavoriteUsers }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
         
         searchBar.rx.text.orEmpty
             .filterEmpty()
@@ -80,16 +87,7 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
             }
         
         items.observeOn(MainScheduler.instance)
-            .bind(to: tableView.rx.items(dataSource: FavoriteViewController.searchListDataSource()))
-            .disposed(by: disposeBag)
-            
-        //셀 선택 처리
-        Observable.zip(tableView.rx.itemSelected,
-                       tableView.rx.modelSelected(SearchItem.self))
-            .bind { [weak self] (indexPath, item) in
-                
-                print("----------- <\(#file), \(#function), \(#line)> -----------")
-            }
+            .bind(to: tableView.rx.items(dataSource: FavoriteViewController.favoriteListDataSource(reactor: reactor)))
             .disposed(by: disposeBag)
     }
     
@@ -106,8 +104,10 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
         tableView.do {
             view.addSubview($0)
             $0.register(GithubUserCell.self, forCellReuseIdentifier: "GithubUserCell")
+            $0.register(FavoriteEmptyCell.self, forCellReuseIdentifier: "FavoriteEmptyCell")
             $0.rowHeight = 100
             $0.contentInsetAdjustmentBehavior = .never
+            $0.sectionFooterHeight = 0
             
             $0.snp.makeConstraints { make in
                 make.top.equalTo(searchBar.snp.bottom)
@@ -117,34 +117,44 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
     }
     
     //MARK: - DataSource
-    static func searchListDataSource()
+    static func favoriteListDataSource(reactor: FavoriteReactor)
     -> RxTableViewSectionedReloadDataSource<FavoriteUserSectionModel> {
         let dataSource = RxTableViewSectionedReloadDataSource<FavoriteUserSectionModel>(
             configureCell: { (dataSource, tableView, indexPath, item) in
                 
-                guard let cell = tableView.dequeueReusableCell(withIdentifier: "GithubUserCell") as? GithubUserCell else { return UITableViewCell() }
-                
-//                switch item {
-//                case .header, .empty:
-//                case .list(let favoriteUser):
-//
-//                }
-                
-//                cell.reactor = GithubUserCellReactor(searchItem: item)
+                switch item {
+                case .empty: ()
+                    guard let cell = tableView.dequeueReusableCell(withIdentifier: "FavoriteEmptyCell") as? FavoriteEmptyCell else { return UITableViewCell() }
+                    return cell
+                case .list(let favoriteUser):
+                    guard let cell = tableView.dequeueReusableCell(withIdentifier: "GithubUserCell") as? GithubUserCell else { return UITableViewCell() }
+                    cell.reactor = GithubUserCellReactor(userName: favoriteUser.userId,
+                                                         imagePath: favoriteUser.avartarUrl,
+                                                         isFavorite: true)
 
-                return cell
+                    cell.rx.favoriteButtonTap
+                        .observeOn(MainScheduler.instance)
+                        .bind { _ in
+                            reactor.action.onNext(.removeFavoriteUser(user: favoriteUser))
+                        }
+                        .disposed(by: cell.disposeBag)
+                    return cell
+                }
             },
             titleForHeaderInSection: { dataSource, sectionIndex in
                 
-                
-                
-                if dataSource.sectionModels.count > 0 {
+                let items = dataSource.sectionModels.first?.items
+                let isEmpty = items?.contains { cellType in
+                    switch cellType {
+                    case .empty: return true
+                    case .list: return false
+                    }
+                }
+                if isEmpty == false {
                     let section = dataSource[sectionIndex]
-                    return "test"
-//                    return "\(section.index) (\(section.items.count))"
+                    return "itemCount: \(section.items.count)"
                 } else {
-                    print("----------- <\(#file), \(#function), \(#line)> -----------")
-                    return "has no section"
+                    return "EMPTY"
                 }
             }
         )
@@ -158,7 +168,6 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
 struct FavoriteUserSectionModel: SectionModelType {
     
     var items: [FavoriteUserCellModel]
-    
     
     typealias Item = FavoriteUserCellModel
 }
@@ -175,14 +184,13 @@ enum FavoriteUserCellModel {
     
     var identity : Identity {
         switch self {
-        case .header(let index), .empty(let index):
+        case .empty(let index):
             return index
         case .list(let data):
             return data.id
         }
     }
     
-    case header(index: Int)
     case list(FavoriteUser)
     case empty(index: Int)
 }

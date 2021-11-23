@@ -21,7 +21,6 @@ final class CompositionRoot {
         window.makeKeyAndVisible()
      
         if let localStorage = getLocalStorage() {
-            print("----------- <\(#file), \(#function), \(#line)> -----------")
             let localStorageService = LocalStorageService(localStorage: localStorage)
             let favoriteService = FavoriteService(localStorageService: localStorageService)
             
@@ -49,14 +48,12 @@ final class CompositionRoot {
     static func getLocalStorage() -> LocalStorage? {
         var localStorage: LocalStorage? {
             do {
-                print("----------- <\(#file), \(#function), \(#line)> -----------")
                 return try LocalStorage()
             } catch let error {
                 print("localStorage init failed: ", error.localizedDescription)
                 return nil
             }
         }
-        print("----------- <\(#file), \(#function), \(#line)> -----------")
         return localStorage
     }
 }
