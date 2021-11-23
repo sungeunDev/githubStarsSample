@@ -15,9 +15,7 @@ class FavoriteReactor: Reactor {
     enum Action {
         case loadFavoriteUsers
         case removeFavoriteUser(user: FavoriteUser)
-        
         case searchFavoriteUser(keyword: String)
-        case resetSearchResult
     }
     
     enum Mutation {
@@ -46,7 +44,7 @@ class FavoriteReactor: Reactor {
     func mutate(action: Action) -> Observable<Mutation> {
         switch action {
         
-        case .loadFavoriteUsers, .resetSearchResult:
+        case .loadFavoriteUsers:
             return getFavoriteUsers()
                 .map { Mutation.setFavoriteUserList($0) }
             
@@ -62,8 +60,9 @@ class FavoriteReactor: Reactor {
             return Observable.concat([ setSuccessRemoveUser, resetSuccessRemoveUser ])
             
         case .searchFavoriteUser(let keyword):
+            let lowercasedKeyword = keyword.lowercased()
             let searchResult = currentState.favoriteUsers
-                .filter { $0.userId?.contains(keyword) ?? false }
+                .filter { $0.userId?.contains(lowercasedKeyword) ?? false }
             
             return Observable.just(Mutation.setFavoriteUserList(searchResult))
         }
