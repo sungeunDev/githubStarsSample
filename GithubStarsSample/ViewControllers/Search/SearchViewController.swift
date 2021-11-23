@@ -153,7 +153,7 @@ final class SearchViewController: UIViewController, ReactorKit.View {
                     .disposed(by: cell.disposeBag)
                 
                 //찜 정보 변경될때 셀의 데이터와 비교해서 UI 갱신 처리
-                GlobalStates.shared.changedFavoriteUserInfo
+                reactor.favoriteService.changedFavoriteUserInfo
                     .filter { item.id == $0.userId }
                     .bind { info in
                         cell.reactor?.action.onNext(.changeFavoriteStatus(info.status))

@@ -44,7 +44,7 @@ final class FavoriteViewController: UIViewController, ReactorKit.View {
     func bind(reactor: Reactor) {
         
         //찜 정보 변경될때 리액터에서 찜리스트 데이터 로드
-        GlobalStates.shared.changedFavoriteUserInfo
+        reactor.favoriteService.changedFavoriteUserInfo
             .map { _ in Reactor.Action.loadFavoriteUsers }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
